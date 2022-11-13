@@ -44,3 +44,34 @@ def encode_single_sample(img_path, label):
     label = char_to_num(tf.strings.unicode_split(label, input_encoding="UTF-8"))
     # 7. Return a dict as our model is expecting two inputs
     return {"image": img, "label": label}
+
+
+train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+train_dataset = (
+    train_dataset.map(
+        encode_single_sample, num_parallel_calls=tf.data.AUTOTUNE
+    )
+    .batch(batch_size)
+    .prefetch(buffer_size=tf.data.AUTOTUNE)
+)
+
+validation_dataset = tf.data.Dataset.from_tensor_slices((x_valid, y_valid))
+validation_dataset = (
+    validation_dataset.map(
+        encode_single_sample, num_parallel_calls=tf.data.AUTOTUNE
+    )
+    .batch(batch_size)
+    .prefetch(buffer_size=tf.data.AUTOTUNE)
+)
+
+_, ax = plt.subplots(4, 4, figsize=(10, 5))
+for batch in train_dataset.take(1):
+    images = batch["image"]
+    labels = batch["label"]
+    for i in range(16):
+        img = (images[i] * 255).numpy().astype("uint8")
+        label = tf.strings.reduce_join(num_to_char(labels[i])).numpy().decode("utf-8")
+        ax[i // 4, i % 4].imshow(img[:, :, 0].T, cmap="gray")
+        ax[i // 4, i % 4].set_title(label)
+        ax[i // 4, i % 4].axis("off")
+plt.show()
